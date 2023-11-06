@@ -22,6 +22,12 @@ state.output = computed(() => {
   }
 })
 
+function switchBinDec() {
+  let temp = state.output
+  state.binToDec = !state.binToDec
+  state.input = temp
+}
+
 /**
  * Two's complement to decimal
  */
@@ -64,6 +70,48 @@ function binToDec() {
   return decimal
 }
 
+/**
+ * Decimal to two's complement
+ */
+function decToBin() {
+  if (state.input.trim().length == 0) {
+    return ""
+  }
+
+  //check for valid chars (0-9)
+  if (!/^-?[0-9]+$/.test(state.input.trim())) {
+    state.inputInvalid = true
+    state.inputTooBig = false
+    console.log("invalid chars")
+    return ""
+  }
+
+  state.inputInvalid = false
+
+  let decimal = parseInt(state.input)
+
+  if (decimal > 0) {
+    let binary = decimal.toString(2)
+    binary = binary.padStart(8, "0")
+    return binary
+  }
+
+  if (decimal < 0) {
+    decimal = 0 - decimal
+    decimal = decimal - 1
+    let binary = decimal.toString(2)
+    binary = binary.replace(/0/g, "2")
+    binary = binary.replace(/1/g, "0")
+    binary = binary.replace(/2/g, "1")
+    binary = binary.padStart(8, "1")
+    return binary
+  } else {
+    let binary = decimal.toString(2)
+    binary = binary.padStart(8, "0")
+    return binary
+  }
+}
+
 
 </script>
 
@@ -104,8 +152,7 @@ function binToDec() {
       </div>
     </div>
     <div class="col-md-12 col-lg-2 d-flex align-items-center justify-content-center">
-      <button type="button" class="btn btn-primary my-3 d-flex align-items-center"
-        @click.prevent="state.binToDec = !state.binToDec">
+      <button type="button" class="btn btn-primary my-3 d-flex align-items-center" @click.prevent="switchBinDec()">
         <div class="me-2">Vertauschen</div>
         <img src="./assets/arrow-right-arrow-left-solid.svg" width="30" height="30">
       </button>
