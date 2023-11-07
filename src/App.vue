@@ -22,11 +22,147 @@ state.output = computed(() => {
   }
 })
 
+state.explainText = computed(() => {
+  if (state.input.trim().length == 0) {
+    return ""
+  }
+
+  if (state.binToDec) {
+    return explainTwosToDec()
+  } else {
+    return explainDecToTwos()
+  }
+})
+
 function switchBinDec() {
   let temp = state.output
   state.binToDec = !state.binToDec
-  state.input = temp
+  state.input = temp.toString()
 }
+
+function explainTwosToDec() {
+  if (state.inputInvalid) {
+    return ""
+  }
+
+  let input = state.input.replace(/ /g, "")
+  let lengthMultipleOf8 = input.length % 8 == 0
+  let negative = lengthMultipleOf8 && input[0] == 1
+
+  let result = ""
+
+  if (negative) {
+    result += "Die Eingabe ist negativ, da die Länge der Eingabe ein Vielfaches von 8 ist und das erste Bit eine 1 ist.\n\n"
+
+    result += "1. Merke dir, dass das Ergebnis eine negative Zahl sein muss.\n"
+
+    result += "2. Invertiere alle Bits.\n"
+    input = input.replace(/0/g, "2")
+    input = input.replace(/1/g, "0")
+    input = input.replace(/2/g, "1")
+    result += "   -> " + input + "\n"
+
+    result += "3. Addiere 1.\n"
+    let decimal = parseInt(input, 2)
+    decimal = decimal + 1
+    let binary = decimal.toString(2)
+    result += "   -> " + binary.padStart(input.length, "0") + "\n"
+    result += "    = " + binary.padStart(input.length, " ") + "\n"
+
+    result += "4. Wandle die Binärzahl wie üblich in eine Dezimalzahl um.\n"
+    result += explainBinToDec(binary)
+    result += "\n"
+
+    result += "5. Füge nun noch das Minuszeichen aus Schritt 1 an.\n"
+    result += "   -> -" + decimal + "\n"
+
+  } else if (lengthMultipleOf8 && !negative) {
+    result += "Die Eingabe ist positiv, da die Länge der Eingabe zwar ein Vielfaches von 8 ist, das erste Bit aber eine 0 ist.\n\n"
+  } else {
+    result += "Die Eingabe ist positiv, da die Länge der Eingabe kein Vielfaches von 8 ist.\n\n"
+  }
+
+  if (!negative) {
+    result += "Wandle die Binärzahl wie üblich in eine Dezimalzahl um.\n\n"
+    result += explainBinToDec(input)
+    result += "\n"
+  }
+
+  return result
+}
+
+function getMaxLength(digit, base, power) {
+  let result = (digit * base ** power).toString().length
+  let calc1 = `${digit} * ${base}^${power}`.length
+  let calc2 = `${digit} * ${base ** power}`.length
+  return Math.max(result, calc1, calc2)
+}
+
+function explainBinToDec(binary) {
+  let result = "     "
+
+  // 2 * 10^4 + 3 * 10^3 + ...
+  for (let i = 0; i < binary.length; i++) {
+    let digit = parseInt(binary[i], 2)
+    let power = binary.length - i - 1
+    let maxLength = getMaxLength(digit, 2, power)
+    let newSum = `${digit} \u2219 2^${power} + `
+    result += newSum.padStart(maxLength + 3, " ")
+  }
+
+  result = result.slice(0, -3)
+  result += "\n   = "
+
+  // 2 * 1000 + 3 * 100 + 4 * 10 + 5 * 1
+  for (let i = 0; i < binary.length; i++) {
+    let digit = parseInt(binary[i], 2)
+    let power = binary.length - i - 1
+    let maxLength = getMaxLength(digit, 2, power)
+    let newSum = `${digit} \u2219 ${2 ** power} + `
+    result += newSum.padStart(maxLength + 3, " ")
+  }
+
+  result = result.slice(0, -3)
+  result += "\n   = "
+
+  // 2000 + 300 + 40 + 5
+  for (let i = 0; i < binary.length; i++) {
+    let digit = parseInt(binary[i], 2)
+    let power = binary.length - i - 1
+    let maxLength = getMaxLength(digit, 2, power)
+    let newSum = `${digit * 2 ** power} + `
+    result += newSum.padStart(maxLength + 3, " ")
+  }
+
+  result = result.slice(0, -3)
+  result += "\n   = "
+
+  let lineLength = result.split("\n")[0].length
+  result += " ".repeat(Math.max(lineLength - parseInt(binary, 2).toString().length - 5, 0))
+
+  result += parseInt(binary, 2)
+
+  return result
+}
+
+
+function explainDecToTwos() {
+  let input = state.input.trim()
+  let result = ""
+
+  if (input[0] != "-") {
+    result += "Da die Eingabe positiv ist, kannst du die Zahl einfach wie üblich ins Dezimalsystem umrechnen.\n\n"
+  } else {
+    result += "1. Interpretiere die Eingabe als positive Zahl und tue zunächst so, als gäbe es kein Vorzeichen.\n"
+    result += "   Merke dir das Vorzeichen für Schritt 2."
+    result += "   Wandle die Eingabe zunächst wie üblich ins Dezimalsystem um.\n\n"
+  }
+
+  result += explainDecToBin(input)
+
+  return "TODO"
+}
+
 
 /**
  * Two's complement to decimal
@@ -40,7 +176,6 @@ function binToDec() {
   if (!/^[01 ]+$/.test(state.input)) {
     state.inputInvalid = true
     state.inputTooBig = false
-    console.log("invalid chars")
     return ""
   }
 
@@ -82,7 +217,6 @@ function decToBin() {
   if (!/^-?[0-9]+$/.test(state.input.trim())) {
     state.inputInvalid = true
     state.inputTooBig = false
-    console.log("invalid chars")
     return ""
   }
 
@@ -90,9 +224,16 @@ function decToBin() {
 
   let decimal = parseInt(state.input)
 
-  if (decimal > 0) {
+  //TODO reverse check
+
+  if (decimal >= 0) {
     let binary = decimal.toString(2)
-    binary = binary.padStart(8, "0")
+
+    // pad to next multiple of 8
+    binary = binary.padStart(Math.ceil(binary.length / 8) * 8, "0")
+
+    // insert whitespace every 8th char
+    binary = binary.replace(/(.{8})/g, "$1 ")
     return binary
   }
 
@@ -103,13 +244,19 @@ function decToBin() {
     binary = binary.replace(/0/g, "2")
     binary = binary.replace(/1/g, "0")
     binary = binary.replace(/2/g, "1")
-    binary = binary.padStart(8, "1")
+
+    // pad to next multiple of 8
+    binary = binary.padStart(Math.ceil(binary.length / 8) * 8, "1")
+
+    // insert whitespace every 8th char
+    binary = binary.replace(/(.{8})/g, "$1 ")
+
     return binary
-  } else {
+  } /* else {
     let binary = decimal.toString(2)
     binary = binary.padStart(8, "0")
     return binary
-  }
+  } */
 }
 
 
@@ -146,7 +293,7 @@ function decToBin() {
             Trage eine Binärzahl in Zweierkomplementdarstellung ein.
           </li>
           <li>
-            Wenn du eine negative Zahl darstellen möchtest, so muss deren Länge ein Vielfaches von 8 sein.
+            Wenn du eine negative Zahl darstellen möchtest, so <u>muss</u> deren Länge ein Vielfaches von 8 sein.
           </li>
         </ul>
       </div>
