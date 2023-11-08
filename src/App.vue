@@ -52,7 +52,7 @@ function explainTwosToDec() {
   let result = ""
 
   if (negative) {
-    result += "Die Eingabe ist negativ, da die Länge der Eingabe ein Vielfaches von 8 ist und das erste Bit eine 1 ist.\n\n"
+    result += "Die Eingabe ist negativ, da die Länge der Eingabe ein Vielfaches von 8 ist und da das erste Bit eine 1 ist.\n\n"
 
     result += "1. Merke dir, dass das Ergebnis eine negative Zahl sein muss.\n"
 
@@ -147,60 +147,65 @@ function explainBinToDec(binary) {
 
 
 function explainDecToTwos() {
+  if (state.inputInvalid || state.input.trim() == "-") {
+    return ""
+  }
+
   let input = state.input.trim()
   let result = ""
 
   if (input[0] != "-") {
-    result += "Da die Eingabe positiv ist, kannst du die Zahl einfach wie üblich ins Dezimalsystem umrechnen.\n\n"
+    result += "Da die Eingabe positiv ist, kannst du die Zahl einfach wie üblich ins Binärsystem umrechnen.\n\n"
   } else {
     result += "1. Interpretiere die Eingabe als positive Zahl und tue zunächst so, als gäbe es kein Vorzeichen.\n"
-    result += "   Merke dir das Vorzeichen für Schritt 2."
+    result += "   Merke dir das Vorzeichen für Schritt 2.\n"
     result += "   Wandle die Eingabe zunächst wie üblich ins Dezimalsystem um.\n\n"
   }
 
-  result += explainDecToBin(input)
+  result += explainDecToBin(input[0] == "-" ? input.slice(1) : input)
+
+  result += "\n   Füge nun so viele Nullen vorne an, dass die Länge der Binärzahl ein Vielfaches von 8 ist.\n"
+  let binaryVomBetrag = parseInt(input[0] == "-" ? input.slice(1) : input).toString(2)
+  binaryVomBetrag = binaryVomBetrag.padStart(Math.ceil(binaryVomBetrag.length / 8) * 8, "0")
+  binaryVomBetrag = binaryVomBetrag.replace(/(.{8})/g, "$1 ")
+  result += `   Resultat: ${binaryVomBetrag}`
+
+  if (input[0] == "-") {
+    result += "\n\n2. Da die Zahl negativ war, musst du nun alle Bits invertieren.\n"
+    let binary = binaryVomBetrag.replace(/0/g, "2")
+    binary = binary.replace(/1/g, "0")
+    binary = binary.replace(/2/g, "1")
+    result += "   -> " + binary + "\n"
+
+    result += "3. Addiere 1.\n"
+    result += "   -> " + state.output
+
+  }
 
   return result
 }
 
 function explainDecToBin(decimal) {
-  let result = "     "
+  let result = ""
 
-  // 2 * 10^4 + 3 * 10^3 + ...
-  for (let i = 0; i < decimal.length; i++) {
-    let digit = parseInt(decimal[i])
-    let power = decimal.length - i - 1
-    let maxLength = getMaxLength(digit, 10, power)
-    let newSum = `${digit} \u2219 10^${power} + `
-    result += newSum.padStart(maxLength + 3, " ")
+  let max1 = decimal.length
+  decimal = parseInt(decimal)
+  let max2 = Math.floor(decimal / 2).toString().length
+
+  while (decimal !== 0) {
+    let rest = decimal % 2
+    let newLine = "   "
+    newLine += " ".repeat(max1 - decimal.toString().length)
+    newLine += decimal.toString()
+    newLine += " : 2 = "
+    newLine += " ".repeat(max2 - (Math.floor(decimal / 2).toString().length))
+    newLine += `${Math.floor(decimal / 2)}`
+    newLine += ` Rest ${rest}\n`
+    result += newLine
+    decimal = Math.floor(decimal / 2)
   }
 
-  result = result.slice(0, -3)
-  result += "\n   = "
-
-  // 2 * 1000 + 3 * 100 + 4 * 10 + 5 * 1
-  for (let i = 0; i < decimal.length; i++) {
-    let digit = parseInt(decimal[i])
-    let power = decimal.length - i - 1
-    let maxLength = getMaxLength(digit, 10, power)
-    let newSum = `${digit} \u2219 ${10 ** power} + `
-    result += newSum.padStart(maxLength + 3, " ")
-  }
-
-  result = result.slice(0, -3)
-  result += "\n   = "
-
-  // 2000 + 300 + 40 + 5
-  for (let i = 0; i < decimal.length; i++) {
-    let digit = parseInt(decimal[i])
-    let power = decimal.length - i - 1
-    let maxLength = getMaxLength(digit, 10, power)
-    let newSum = `${digit * 10 ** power} + `
-    result += newSum.padStart(maxLength + 3, " ")
-  }
-
-  result = result.slice(0, -3)
-  result
+  return result
 }
 
 /**
@@ -208,6 +213,7 @@ function explainDecToBin(decimal) {
  */
 function binToDec() {
   if (state.input.trim().length == 0) {
+    state.inputInvalid = false
     return ""
   }
 
@@ -249,12 +255,13 @@ function binToDec() {
  * Decimal to two's complement
  */
 function decToBin() {
-  if (state.input.trim().length == 0) {
+  if (state.input.trim().length == 0 || state.input.trim() == "-") {
+    state.inputInvalid = false
     return ""
   }
 
   //check for valid chars (0-9)
-  if (!/^-?[0-9]+$/.test(state.input.trim())) {
+  if (!/^-?[0-9]*$/.test(state.input.trim())) {
     state.inputInvalid = true
     state.inputTooBig = false
     return ""
@@ -265,6 +272,11 @@ function decToBin() {
   let decimal = parseInt(state.input)
 
   //TODO reverse check
+  if (decimal > 2 ** 31 - 1 || decimal < -(2 ** 31)) {
+    state.inputInvalid = true
+    state.inputTooBig = true
+    return ""
+  }
 
   if (decimal >= 0) {
     let binary = decimal.toString(2)
@@ -277,26 +289,22 @@ function decToBin() {
     return binary
   }
 
-  if (decimal < 0) {
-    decimal = 0 - decimal
-    decimal = decimal - 1
-    let binary = decimal.toString(2)
-    binary = binary.replace(/0/g, "2")
-    binary = binary.replace(/1/g, "0")
-    binary = binary.replace(/2/g, "1")
 
-    // pad to next multiple of 8
-    binary = binary.padStart(Math.ceil(binary.length / 8) * 8, "1")
+  decimal = 0 - decimal
+  decimal = decimal - 1
+  let binary = decimal.toString(2)
+  binary = binary.replace(/0/g, "2")
+  binary = binary.replace(/1/g, "0")
+  binary = binary.replace(/2/g, "1")
 
-    // insert whitespace every 8th char
-    binary = binary.replace(/(.{8})/g, "$1 ")
+  // pad to next multiple of 8
+  binary = binary.padStart(Math.ceil(binary.length / 8) * 8, "1")
 
-    return binary
-  } /* else {
-    let binary = decimal.toString(2)
-    binary = binary.padStart(8, "0")
-    return binary
-  } */
+  // insert whitespace every 8th char
+  binary = binary.replace(/(.{8})/g, "$1 ")
+
+  return binary
+
 }
 
 
@@ -321,10 +329,10 @@ function decToBin() {
               placeholder="Eingabe" autofocus v-model="state.input">
             <label for="input">Eingabe</label>
           </div>
-          <!-- <div class="inputInvalidMessage" :class="{ invisible: !state.inputInvalid }">
-            <div v-if="state.inputTooBig">Zahl zu groß (Überlauf)</div>
+          <div class="inputInvalidMessage" v-if=state.inputInvalid>
+            <div v-if="state.inputTooBig">Zahl zu groß</div>
             <div v-else>Eingabe fehlerhaft!</div>
-          </div>  -->
+          </div>
         </div>
       </div>
       <div v-if="state.binToDec" class="explainBinInput">
@@ -359,7 +367,7 @@ function decToBin() {
       </div>
     </div>
   </div>
-  <div class="row mt-5 ms-3 mb-2">
+  <div class="row mt-5 ms-3 mb-2 explainHeader">
     Erklärung:
   </div>
   <div class="row">
@@ -370,6 +378,10 @@ function decToBin() {
 </template>
 
 <style scoped>
+.explainHeader {
+  font-size: 1.2rem;
+}
+
 .input-lg {
   height: 75px;
 }
@@ -389,6 +401,7 @@ function decToBin() {
   font-family: monospace;
   white-space: pre;
   background-color: #f0f0f0;
+  height: 100%;
 }
 
 .invisible {
