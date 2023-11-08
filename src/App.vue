@@ -160,9 +160,48 @@ function explainDecToTwos() {
 
   result += explainDecToBin(input)
 
-  return "TODO"
+  return result
 }
 
+function explainDecToBin(decimal) {
+  let result = "     "
+
+  // 2 * 10^4 + 3 * 10^3 + ...
+  for (let i = 0; i < decimal.length; i++) {
+    let digit = parseInt(decimal[i])
+    let power = decimal.length - i - 1
+    let maxLength = getMaxLength(digit, 10, power)
+    let newSum = `${digit} \u2219 10^${power} + `
+    result += newSum.padStart(maxLength + 3, " ")
+  }
+
+  result = result.slice(0, -3)
+  result += "\n   = "
+
+  // 2 * 1000 + 3 * 100 + 4 * 10 + 5 * 1
+  for (let i = 0; i < decimal.length; i++) {
+    let digit = parseInt(decimal[i])
+    let power = decimal.length - i - 1
+    let maxLength = getMaxLength(digit, 10, power)
+    let newSum = `${digit} \u2219 ${10 ** power} + `
+    result += newSum.padStart(maxLength + 3, " ")
+  }
+
+  result = result.slice(0, -3)
+  result += "\n   = "
+
+  // 2000 + 300 + 40 + 5
+  for (let i = 0; i < decimal.length; i++) {
+    let digit = parseInt(decimal[i])
+    let power = decimal.length - i - 1
+    let maxLength = getMaxLength(digit, 10, power)
+    let newSum = `${digit * 10 ** power} + `
+    result += newSum.padStart(maxLength + 3, " ")
+  }
+
+  result = result.slice(0, -3)
+  result
+}
 
 /**
  * Two's complement to decimal
@@ -204,6 +243,7 @@ function binToDec() {
 
   return decimal
 }
+
 
 /**
  * Decimal to two's complement
