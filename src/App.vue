@@ -2,7 +2,7 @@
 import "bootstrap/dist/css/bootstrap.min.css"
 import "bootstrap"
 
-import { reactive, onBeforeMount, computed } from "vue"
+import { reactive, computed } from "vue"
 
 const state = reactive({
   input: "",
@@ -10,7 +10,6 @@ const state = reactive({
   binToDec: true,
   inputInvalid: false,
   inputTooBig: false,
-  explain: false,
   explainText: "",
 })
 
@@ -404,10 +403,6 @@ function decToBin() {
   height: 100%;
 }
 
-.invisible {
-  visibility: hidden;
-}
-
 .redBorder {
   border-color: #842029;
   border-width: 2px;
@@ -421,9 +416,6 @@ function decToBin() {
   border-radius: 5px;
 }
 
-.inputInvalid {
-  border-color: #842029;
-}
 
 input,
 select {
