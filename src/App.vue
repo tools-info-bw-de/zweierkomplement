@@ -1,8 +1,8 @@
 <script setup>
 import "bootstrap/dist/css/bootstrap.min.css"
 import "bootstrap"
-
-import { reactive, computed } from "vue"
+import { Popover } from "bootstrap"
+import { reactive, computed, onMounted } from "vue"
 
 const state = reactive({
   input: "",
@@ -11,6 +11,15 @@ const state = reactive({
   inputInvalid: false,
   inputTooBig: false,
   explainText: "",
+})
+
+onMounted(() => {
+  const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+  const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new Popover(popoverTriggerEl, {
+    html: true,
+    sanitize: false,
+    trigger: "focus",
+  }))
 })
 
 state.output = computed(() => {
@@ -310,6 +319,10 @@ function decToBin() {
 </script>
 
 <template>
+  <button type="button" class="infoBtn btn btn-outline-dark btn-sm" data-bs-container="body" data-bs-toggle="popover"
+    data-bs-placement="bottom"
+    data-bs-content='Quellcode auf <a href="https://github.com/tools-info-bw-de/zweierkomplement" target="_blank">github</a>!<br>§ MIT - Marco Kümmel'>info</button>
+
   <h1 class="mb-4">Zweierkomplement Rechner</h1>
   <div class="row">
     <div class="ioBox col-md-12 col-lg-5 d-flex flex-column">
@@ -377,6 +390,12 @@ function decToBin() {
 </template>
 
 <style scoped>
+.infoBtn {
+  position: absolute;
+  top: 10px !important;
+  right: 10px !important;
+}
+
 .explainHeader {
   font-size: 1.2rem;
 }
